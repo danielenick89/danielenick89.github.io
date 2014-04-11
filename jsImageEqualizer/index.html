@@ -7,10 +7,14 @@
         <h2>imageEqualizer</h2>
         <script src="js/jquery.js"></script>
         <div id="imageform"></div>
-        <div id="preview">
+         <div id="controls">
             Red range: from <input id="redRangeStart" type="number" value="0" min="0" max="255" /> to <input id="redRangeEnd" type="number" value="255" min="0" max="255" /><br/>
             Green range: from <input id="greenRangeStart" type="number" value="0" min="0" max="255" /> to <input id="greenRangeEnd" type="number" value="255" min="0" max="255" /><br/>
             Blue range: from <input id="blueRangeStart" type="number" value="0" min="0" max="255" /> to <input id="blueRangeEnd" type="number" value="255" min="0" max="255" /><br/>
+            <button onclick="processa()">Process</button>
+        </div>
+        <div id="preview">
+
         </div>
         <script src="js/image.js"></script>
     </body>

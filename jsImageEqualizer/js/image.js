@@ -103,19 +103,19 @@ var ImageChannelEqualizer = (function() {
     }
 
     var setRedChannel = function(start,end) {
-        redRange.start = start;
+        redRange.start = parseInt(start);
         redRange.width = end-start;
         redRange.toBeProcessed = true;
     }
 
     var setGreenChannel = function(start,end) {
-        greenRange.start = start;
+        greenRange.start = parseInt(start);
         greenRange.width = end-start;
         greenRange.toBeProcessed = true;
     }
 
     var setBlueChannel = function(start,end) {
-        blueRange.start = start;
+        blueRange.start = parseInt(start);
         blueRange.width = end-start;
         blueRange.toBeProcessed = true;
     }
@@ -153,15 +153,33 @@ var ImageChannelEqualizer = (function() {
 
 ImagePicker.init(document.getElementById('imageform'));
 
+
+var img;
+var preview = document.getElementById('preview');
+
 ImagePicker.setImageLoadCallback(function(imgObj) {
 
-    document.getElementById('preview').appendChild(imgObj);
+    preview.innerHTML = ''
+    preview.appendChild(imgObj);
+    img = imgObj;
+    
+    
+});
+
+function processa() {
+    if(img == undefined) {
+        alert("Select an image before.")
+        return;
+    }
+
+    preview.innerHTML = '';
+    preview.appendChild(img);
 
     var red = {start: document.getElementById('redRangeStart').value, end: document.getElementById('redRangeEnd').value}
     var green = {start: document.getElementById('greenRangeStart').value, end: document.getElementById('greenRangeEnd').value}
     var blue = {start: document.getElementById('blueRangeStart').value, end: document.getElementById('blueRangeEnd').value}
 
-    ImageChannelEqualizer.setImage(imgObj);
+    ImageChannelEqualizer.setImage(img);
 
     ImageChannelEqualizer.setBlueChannel(blue.start,blue.end);
     ImageChannelEqualizer.setGreenChannel(green.start,green.end);
@@ -169,8 +187,6 @@ ImagePicker.setImageLoadCallback(function(imgObj) {
 
     ImageChannelEqualizer.process(function() {
         var img = ImageChannelEqualizer.getResult();
-        document.getElementById('preview').appendChild(img);
+        preview.appendChild(img);
     });
-    
-});
-
+}
