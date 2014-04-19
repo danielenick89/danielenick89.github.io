@@ -113,7 +113,7 @@ var Animal = function(genoma) {
 
 var Plant = function() {
 	var stepSurvived = 0;
-	var REPRODUCE_PROBABILITY = 0.008;
+	var REPRODUCE_PROBABILITY = 0.005;
 	var REPRODUCE_BEFORE_DIE = 2;
 	var reproduced = 0;
 
@@ -363,7 +363,7 @@ var EnviromentRapresentation = (function() {
 				context.fillRect(WIDTH*j/length_j,HEIGHT*i/length_i,WIDTH*1/length_j,HEIGHT*1/length_i);
 				break;
 			case 'nothing': 
-				context.fillStyle = "white";
+				context.fillStyle = "#CCA352";
 				context.fillRect(WIDTH*j/length_j,HEIGHT*i/length_i,WIDTH*1/length_j,HEIGHT*1/length_i);
 				break;
 		}
