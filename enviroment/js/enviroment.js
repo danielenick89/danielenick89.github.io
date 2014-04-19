@@ -551,10 +551,12 @@ EnviromentGenomaFactory = (function() {
 
 var already = false
 var interval = 0;
-var intervalId;
+intervalId = -1;
+var stop = false;
 
 var doStep = function() {
 	if(Enviroment.step() == false) {
+		clearInterval(intervalId);
 		
 		//alert('starting new generation')
 
@@ -584,12 +586,11 @@ function go() {
 		Enviroment.setRepresenter(EnviromentRapresentation);
 		already = true
 	}
-
 	intervalId=setInterval(doStep,interval);
 }
 
-function stop() {
-	clearInterval(intervalId);
+function stopp() {
+	clearInterval(intervalId)
 }
 
 function toggleRepresentation() {
