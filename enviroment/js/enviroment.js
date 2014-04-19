@@ -6,8 +6,8 @@ var Animal = function(genoma) {
 	var lastActed = 0;
 	var currentMemory = 0;
 
-	var STEPS_PER_WATER_UNIT = 5;
-	var STEPS_PER_FOOD_UNIT = 10;
+	var STEPS_PER_WATER_UNIT = 10;
+	var STEPS_PER_FOOD_UNIT = 15;
 	var INITIAL_STEPS_WITHOUT_DYING = 20;
 
 	var calculateState = function(nearbies) {
@@ -53,17 +53,26 @@ var Animal = function(genoma) {
 			case 'water': waterCollected++; break;
 		}
 
-		if(checkForDeath()) return 'die';
+		if(checkForDeath()) {
+			return 'die';
+		}
 
-		if(nearbies[action].type == 'animal') return null;
-
+		if(nearbies[action].type == 'animal') {
+			return null;
+		}
 		return action;
 	}
 
 	var checkForDeath = function() {
-		if(waterCollected*STEPS_PER_WATER_UNIT < stepSurvived - INITIAL_STEPS_WITHOUT_DYING) return true;
-		if(foodCollected*STEPS_PER_FOOD_UNIT < stepSurvived - INITIAL_STEPS_WITHOUT_DYING) return true; 
-
+		if(waterCollected*STEPS_PER_WATER_UNIT < stepSurvived - INITIAL_STEPS_WITHOUT_DYING) {
+			//console.log("died by thirst")
+			return true;
+		}
+		if(foodCollected*STEPS_PER_FOOD_UNIT < stepSurvived - INITIAL_STEPS_WITHOUT_DYING) {
+			//console.log("died by hunger")
+			return true; 
+		}
+		if(stepSurvived >= 1000) return true;
 		return false;
 	}
 
@@ -104,16 +113,28 @@ var Animal = function(genoma) {
 
 var Plant = function() {
 	var stepSurvived = 0;
-	var REPRODUCE_INTERVAL = 100;
+	var REPRODUCE_PROBABILITY = 0.008;
+	var REPRODUCE_BEFORE_DIE = 2;
+	var reproduced = 0;
 
 	var act = function(nearbies) {
 		stepSurvived++;
 
-		if(stepSurvived % REPRODUCE_INTERVAL == 0) {
+		if(Math.random() < REPRODUCE_PROBABILITY) {
+			if(reproduced == REPRODUCE_BEFORE_DIE) {
+				return 'die';
+			}
+
+			var freePlaces = []
 			for(place in nearbies) {
 				if(nearbies[place].type == 'nothing') {
-					return place;
+					freePlaces.push(place);
 				}
+			}
+			if(freePlaces.length) {
+				freePlaces.sort(function(a,b) { return Math.random()-0.5; });
+				reproduced++;
+				return freePlaces[0];
 			}
 		}
 		return null;
@@ -132,22 +153,25 @@ var Water = function() {
 
 var Enviroment = (function() {
 	var world = [];
-	var ROWS = 100;
-	var COLS = 100;
+	var ROWS = 150;
+	var COLS = 150;
 	var PLANT_RATE = 0.2;
 	var WATER_RATE = 0.2;
-	var RAINING_PROBABILITY = 0.001;
+	var RAINING_PROBABILITY = 0.0003;
 
 	var representer = null;
 	var currentStep = 0;
 	var deadAnimals = []
 	var animalsNumber = 0;
+	var aliveAnimals = 0;
+	var inits = 0;
 
 	var init = function(population) {
-
+		inits++;
 		currentStep = 0;
 		deadAnimals = []
 		animalsNumber = 0;
+		aliveAnimals = 0;
 
 		world = []
 		var empty_pos = []
@@ -175,6 +199,7 @@ var Enviroment = (function() {
 			var indexes = empty_pos.splice(index,1)[0];
 			world[indexes.i][indexes.j] = { type: 'animal', animal: Animal(population[i++]) };
 			animalsNumber++;
+			aliveAnimals++;
 		}
 	}
 
@@ -194,12 +219,15 @@ var Enviroment = (function() {
 			case 'south': moveAnimal(i,j,((i+1)+ROWS)%ROWS , j); break;
 			case 'east': moveAnimal(i,j,i , ((j+1)+COLS)%COLS); break;
 			case 'west': moveAnimal(i,j,i , ((j-1)+COLS)%COLS); break;
-			case 'die': killAnimal(i,j);
+			case 'die': killAnimal(i,j); break;
+			case null: break;
+			default: console.log('Something is wrong. animal.act() returned something unexpected.');
 		}
 
 	}
 
 	var killAnimal = function(i,j) {
+		aliveAnimals--;
 		deadAnimals.push(world[i][j].animal);
 		world[i][j] = {type:'nothing'};
 	}
@@ -220,6 +248,10 @@ var Enviroment = (function() {
 		world[i][j] = {type:'plant', plant:Plant()};
 	}
 
+	var killPlant = function(i,j) {
+		world[i][j] = {type:'nothing'};
+	}
+
 	var makePlantAct = function(cell,i,j) {
 		var nearbies = {
 			north: world[ ((i-1)+ROWS)%ROWS ][j],
@@ -228,13 +260,14 @@ var Enviroment = (function() {
 			west: world[ i ][ ((j-1)+COLS)%COLS ]
 		}
 
-		result = cell.plant.act(nearbies);
+		var result = cell.plant.act(nearbies);
 
 		switch(result) {
 			case 'north': generatePlant(((i-1)+ROWS)%ROWS , j); break;
 			case 'south': generatePlant(((i+1)+ROWS)%ROWS , j); break;
 			case 'east': generatePlant(i , ((j+1)+COLS)%COLS); break;
 			case 'west': generatePlant(i , ((j-1)+COLS)%COLS); break;
+			case 'die': killPlant(i,j);
 		}
 	}
 
@@ -266,13 +299,13 @@ var Enviroment = (function() {
 			representer.represent(world);
 		}
 
-		if(deadAnimals.length == animalsNumber) {
+		if(aliveAnimals == 0) {
 			var cum = 0;
 			for(var i=0; i<deadAnimals.length; i++) {
 				cum+=deadAnimals[i].getStepSurvived();
 			}
 			var avg = cum/deadAnimals.length
-			representer.displaySteps(currentStep,avg);
+			representer.displaySteps(inits,currentStep,avg);
 			return false;
 		}
 		else return true;
@@ -300,9 +333,11 @@ var EnviromentRapresentation = (function() {
 	var WIDTH = 900;
 
 	var canvas = document.createElement('canvas');
-	var stepsDisplay = document.createElement('span');
+	var stepsDisplay = document.createElement('div');
 	
 	var context = canvas.getContext('2d');
+
+	var active = true;
 
 
 	var init = function() {
@@ -340,6 +375,8 @@ var EnviromentRapresentation = (function() {
 	}
 
 	var represent = function(world) {
+		if(!active) return;
+
 		clearCanvas();
 
 		for(var i=0; i<world.length; i++) {
@@ -349,14 +386,31 @@ var EnviromentRapresentation = (function() {
 		}
 	}
 
-	var displaySteps = function(steps,avg) {
-		stepsDisplay.innerHTML = "Max: "+steps + ", Avg: " + avg;
+	var displaySteps = function(generation,steps,avg) {
+		var span = document.createElement('span');
+		span.style.display = 'block';
+		span.innerHTML = generation + ": Max: "+steps + ", Avg: " + avg;
+		if(stepsDisplay.firstChild) {
+			stepsDisplay.insertBefore(span,stepsDisplay.firstChild);
+		} else {
+			stepsDisplay.appendChild(span);
+		}
+	}
+
+	var toggle = function() {
+		active = !active;
+		if(active) {
+			canvas.style.display = 'inline';
+		} else {
+			canvas.style.display = 'none';
+		}
 	}
 
 	return {
 		represent:represent,
 		displaySteps:displaySteps,
-		init:init
+		init:init,
+		toggle:toggle
 	};
 })();
 
@@ -383,16 +437,19 @@ EnviromentGenomaFactory = (function() {
 		for(var i=0; i<population.length; i++) {
 			var genoma = population[i].getGenoma();
 			if(genoma == individual) {
-				return 1/population[i].getStepSurvived()
+				var ret = 1/population[i].getStepSurvived();
+				//console.log(ret);
+				return ret;
 			}
 		}
+		console.log("There's a problem with the fitness function.")
 	};
 
 	var mutate = function(individual) { //don't touch the source!
 		var individual_mutated = []
 		var actions = ['north','south','west','east'];
 
-		if(Math.random() > 0.5) {
+		if(Math.random() > 0.05) {
 			//uniform mutation
 			for (var i = 0; i < LENGTH; i++) {
 				individual_mutated.push( Math.random() > 1/LENGTH ? individual[i] : { action: actions[Math.floor(Math.random()*4)], memory: Math.floor(Math.random()*16) });
@@ -479,7 +536,7 @@ EnviromentGenomaFactory = (function() {
 
 
 var already = false
-var interval = 10;
+var interval = 0;
 var intervalId;
 
 var doStep = function() {
@@ -498,9 +555,9 @@ function go() {
 	if(!already) {
 
 		GeneticEngine.config({
-			populationSize: 400,
+			populationSize: 500,
 			crossoverProbability: 0.8,
-			mutationProbability: 0.05,
+			mutationProbability: 0.8,
 			eliteSelectionProbability: 0.8,
 			tournamentSize: 2
 		});
@@ -519,4 +576,8 @@ function go() {
 
 function stop() {
 	clearInterval(intervalId);
+}
+
+function toggleRepresentation() {
+	EnviromentRapresentation.toggle();
 }
