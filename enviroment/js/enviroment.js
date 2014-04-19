@@ -406,11 +406,25 @@ var EnviromentRapresentation = (function() {
 		}
 	}
 
+	var resize = function(pixels) {
+		if(WIDTH + pixels > 100 && HEIGHT + pixels > 100) {
+			WIDTH += pixels;
+			HEIGHT += pixels;
+
+			canvas.width = WIDTH;
+			canvas.height = HEIGHT;
+
+			clearCanvas();
+		} 
+
+	}
+
 	return {
 		represent:represent,
 		displaySteps:displaySteps,
 		init:init,
-		toggle:toggle
+		toggle:toggle,
+		resize:resize
 	};
 })();
 
@@ -580,4 +594,12 @@ function stop() {
 
 function toggleRepresentation() {
 	EnviromentRapresentation.toggle();
+}
+
+function plus() {
+	EnviromentRapresentation.resize(50);
+}
+
+function minus() {
+	EnviromentRapresentation.resize(-50);
 }
